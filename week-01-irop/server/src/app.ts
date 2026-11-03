@@ -50,6 +50,16 @@ const loginLimiter = rateLimit({
   },
 });
 
+// Root API status endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).json({
+    name: 'IROP Backend API',
+    status: 'online',
+    health: '/health',
+    version: '1.0.0',
+  });
+});
+
 // Health check endpoint (no auth required)
 app.get('/health', (_req: Request, res: Response) => {
   const isDbConnected = mongoose.connection.readyState === 1;

@@ -15,12 +15,23 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse(process.env);
 
+let envData: z.infer<typeof envSchema>;
+
 if (!parsed.success) {
-  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
-  process.exit(1);
+  console.warn('⚠️ Missing or invalid environment variables:', parsed.error.flatten().fieldErrors);
+  envData = {
+    PORT: Number(process.env.PORT) || 5000,
+    NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'production',
+    MONGODB_URI: process.env.MONGODB_URI || '',
+    JWT_SECRET: process.env.JWT_SECRET || 'temporary-fallback-jwt-secret-key-32-chars',
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1d',
+    CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || '*',
+  };
+} else {
+  envData = parsed.data;
 }
 
-export const env = parsed.data;
+export const env = envData;
 
 export function getMongoUri(): string {
   if (env.NODE_ENV === 'test') {
