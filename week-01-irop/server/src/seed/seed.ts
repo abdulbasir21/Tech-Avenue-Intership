@@ -439,12 +439,16 @@ export async function seedDatabase() {
   console.log('======================================================\n');
 }
 
-seedDatabase()
-  .then(async () => {
-    await mongoose.disconnect();
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error('❌ Seed failed:', err);
-    process.exit(1);
-  });
+const isDirectRun = Boolean(process.argv[1] && /seed\.(ts|js)$/.test(process.argv[1]));
+
+if (isDirectRun) {
+  seedDatabase()
+    .then(async () => {
+      await mongoose.disconnect();
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('❌ Seed failed:', err);
+      process.exit(1);
+    });
+}
