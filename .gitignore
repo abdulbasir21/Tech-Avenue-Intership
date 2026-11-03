@@ -18,3 +18,7 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 Thumbs.db
+
+# Personal Interview Prep - NEVER commit
+MY_INTERVIEW_PREP/
+*INTERVIEW_PRESENTATION_GUIDE*
