@@ -1,0 +1,499 @@
+// Prisma Schema for Inventory Management System with Shared Masters
+// Stack: Node.js / Express / TypeScript / PostgreSQL (Neon) / Prisma ORM
+// Scope: Single-company inventory of office supplies & IT consumables only.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ───────────────────────── ENUMS ─────────────────────────
+
+enum PoStatus {
+  draft
+  ordered
+  partially_received
+  received
+  cancelled
+
+  @@map("po_status")
+}
+
+enum RequestStatus {
+  pending
+  approved
+  rejected
+  partially_issued
+  issued
+  cancelled
+
+  @@map("request_status")
+}
+
+enum AdjustmentType {
+  increase
+  decrease
+
+  @@map("adjustment_type")
+}
+
+enum AdjustmentReason {
+  damaged
+  lost
+  count_difference
+  other
+
+  @@map("adjustment_reason")
+}
+
+enum MovementType {
+  goods_receipt
+  stock_issue
+  adjustment_increase
+  adjustment_decrease
+
+  @@map("movement_type")
+}
+
+enum StockAlertLevel {
+  normal
+  low
+  critical
+  out_of_stock
+
+  @@map("stock_alert_level")
+}
+
+enum AuditAction {
+  create
+  update
+  deactivate
+  reactivate
+  status_change
+  stock_adjustment
+
+  @@map("audit_action")
+}
+
+// ───────────────────────── AUTHENTICATION AND USER MANAGEMENT ─────────────────────────
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(30)
+  name        String   @db.VarChar(60)
+  description String?  @db.VarChar(255)
+
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  employeeId   Int      @unique @map("employee_id")
+  roleId       Int      @map("role_id")
+  username     String   @unique @db.VarChar(50)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  purchaseOrdersCreated    PurchaseOrder[]        @relation("PurchaseOrdersCreated")
+  goodsReceiptsConfirmed   GoodsReceipt[]         @relation("GoodsReceiptsConfirmed")
+  stockRequestsRequested   StockRequest[]         @relation("StockRequestsRequested")
+  stockRequestsReviewed    StockRequest[]         @relation("StockRequestsReviewed")
+  stockIssuesIssued        StockIssue[]           @relation("StockIssuesIssued")
+  stockAdjustmentsAdjusted StockAdjustment[]      @relation("StockAdjustmentsAdjusted")
+  notificationRecipients   NotificationRecipient[]
+  auditLogs                AuditLog[]
+
+  @@index([roleId], map: "idx_users_role")
+  @@index([isActive], map: "idx_users_active")
+  @@map("users")
+}
+
+// ───────────────────────── SHARED MASTERS ─────────────────────────
+
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique @db.VarChar(100)
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id             Int          @id @default(autoincrement())
+  employeeCode   String       @unique @map("employee_code") @db.VarChar(30)
+  fullName       String       @map("full_name") @db.VarChar(150)
+  email          String?      @unique @db.VarChar(255)
+  phone          String?      @db.VarChar(30)
+  departmentId   Int          @map("department_id")
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  department     Department   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  user           User?
+  stockIssuesReceived StockIssue[] @relation("StockIssuesReceived")
+
+  @@index([departmentId], map: "idx_employees_department")
+  @@index([isActive], map: "idx_employees_active")
+  @@map("employees")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(100)
+  description String?   @db.VarChar(255)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Unit {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique @db.VarChar(20)
+  name          String    @db.VarChar(60)
+  allowsDecimal Boolean   @default(false) @map("allows_decimal")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  products      Product[]
+
+  @@map("units")
+}
+
+model Supplier {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique @db.VarChar(150)
+  contactPerson String?         @map("contact_person") @db.VarChar(100)
+  email         String?         @db.VarChar(255)
+  phone         String?         @db.VarChar(30)
+  address       String?         @db.Text
+  isActive      Boolean         @default(true) @map("is_active")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model Product {
+  id                 Int       @id @default(autoincrement())
+  sku                String    @unique @db.VarChar(50)
+  name               String    @db.VarChar(150)
+  description        String?   @db.Text
+  categoryId         Int       @map("category_id")
+  unitId             Int       @map("unit_id")
+  minStockLevel      Decimal   @default(0) @map("min_stock_level") @db.Decimal(12, 3)
+  criticalStockLevel Decimal   @default(0) @map("critical_stock_level") @db.Decimal(12, 3)
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  category           Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  unit               Unit      @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  purchaseOrderItems PurchaseOrderItem[]
+  stockRequestItems  StockRequestItem[]
+  stockAdjustments   StockAdjustment[]
+  inventoryBalance   InventoryBalance?
+  stockMovements     StockMovement[]
+  notifications      Notification[]
+
+  @@index([categoryId], map: "idx_products_category")
+  @@index([unitId], map: "idx_products_unit")
+  @@index([isActive], map: "idx_products_active")
+  @@index([name], map: "idx_products_name")
+  @@map("products")
+}
+
+// ───────────────────────── PURCHASE MANAGEMENT ─────────────────────────
+
+model PurchaseOrder {
+  id                   Int                 @id @default(autoincrement())
+  poNumber             String              @unique @map("po_number") @db.VarChar(30)
+  supplierId           Int                 @map("supplier_id")
+  orderDate            DateTime            @map("order_date") @db.Date
+  expectedDeliveryDate DateTime?           @map("expected_delivery_date") @db.Date
+  status               PoStatus            @default(draft)
+  totalAmount          Decimal             @default(0) @map("total_amount") @db.Decimal(14, 2)
+  notes                String?             @db.Text
+  createdByUserId      Int                 @map("created_by_user_id")
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  supplier             Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdByUser        User                @relation("PurchaseOrdersCreated", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  items                PurchaseOrderItem[]
+  goodsReceipts        GoodsReceipt[]
+
+  @@index([supplierId], map: "idx_po_supplier")
+  @@index([status], map: "idx_po_status")
+  @@index([orderDate], map: "idx_po_order_date")
+  @@index([createdByUserId], map: "idx_po_created_by")
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                Int                @id @default(autoincrement())
+  purchaseOrderId   Int                @map("purchase_order_id")
+  productId         Int                @map("product_id")
+  quantityOrdered   Decimal            @map("quantity_ordered") @db.Decimal(12, 3)
+  unitPrice         Decimal            @map("unit_price") @db.Decimal(12, 2)
+  lineTotal         Decimal            @map("line_total") @db.Decimal(14, 2)
+
+  purchaseOrder     PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  product           Product            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  goodsReceiptItems GoodsReceiptItem[]
+
+  @@unique([purchaseOrderId, productId], map: "uq_poi_po_product")
+  @@index([productId], map: "idx_poi_product")
+  @@map("purchase_order_items")
+}
+
+// ───────────────────────── STOCK RECEIVING ─────────────────────────
+
+model GoodsReceipt {
+  id                Int                @id @default(autoincrement())
+  receiptNumber     String             @unique @map("receipt_number") @db.VarChar(30)
+  purchaseOrderId   Int                @map("purchase_order_id")
+  receivedDate      DateTime           @map("received_date") @db.Date
+  deliveryReference String?            @map("delivery_reference") @db.VarChar(100)
+  notes             String?            @db.Text
+  confirmedByUserId Int                @map("confirmed_by_user_id")
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  purchaseOrder     PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  confirmedByUser   User               @relation("GoodsReceiptsConfirmed", fields: [confirmedByUserId], references: [id], onDelete: Restrict)
+  items             GoodsReceiptItem[]
+
+  @@index([purchaseOrderId], map: "idx_gr_po")
+  @@index([receivedDate], map: "idx_gr_received_date")
+  @@index([confirmedByUserId], map: "idx_gr_confirmed_by")
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id                  Int                @id @default(autoincrement())
+  goodsReceiptId      Int                @map("goods_receipt_id")
+  purchaseOrderItemId Int                @map("purchase_order_item_id")
+  quantityReceived    Decimal            @map("quantity_received") @db.Decimal(12, 3)
+
+  goodsReceipt        GoodsReceipt       @relation(fields: [goodsReceiptId], references: [id], onDelete: Restrict)
+  purchaseOrderItem   PurchaseOrderItem  @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Restrict)
+  stockMovement       StockMovement?
+
+  @@unique([goodsReceiptId, purchaseOrderItemId], map: "uq_gri_receipt_poitem")
+  @@index([purchaseOrderItemId], map: "idx_gri_po_item")
+  @@map("goods_receipt_items")
+}
+
+// ───────────────────────── EMPLOYEE STOCK REQUESTS ─────────────────────────
+
+model StockRequest {
+  id                Int                @id @default(autoincrement())
+  requestNumber     String             @unique @map("request_number") @db.VarChar(30)
+  requestedByUserId Int                @map("requested_by_user_id")
+  status            RequestStatus      @default(pending)
+  purpose           String?            @db.Text
+  reviewedByUserId  Int?               @map("reviewed_by_user_id")
+  reviewedAt        DateTime?          @map("reviewed_at") @db.Timestamptz
+  rejectionReason   String?            @map("rejection_reason") @db.Text
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  requestedByUser   User               @relation("StockRequestsRequested", fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  reviewedByUser    User?              @relation("StockRequestsReviewed", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  items             StockRequestItem[]
+
+  @@index([requestedByUserId, createdAt], map: "idx_sr_requester_date")
+  @@index([status], map: "idx_sr_status")
+  @@index([reviewedByUserId], map: "idx_sr_reviewer")
+  @@map("stock_requests")
+}
+
+model StockRequestItem {
+  id                Int               @id @default(autoincrement())
+  stockRequestId    Int               @map("stock_request_id")
+  productId         Int               @map("product_id")
+  quantityRequested Decimal           @map("quantity_requested") @db.Decimal(12, 3)
+  quantityApproved  Decimal?          @map("quantity_approved") @db.Decimal(12, 3)
+
+  stockRequest      StockRequest      @relation(fields: [stockRequestId], references: [id], onDelete: Restrict)
+  product           Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockIssueItems   StockIssueItem[]
+
+  @@unique([stockRequestId, productId], map: "uq_sri_request_product")
+  @@index([productId], map: "idx_sri_product")
+  @@map("stock_request_items")
+}
+
+// ───────────────────────── STOCK ISSUING ─────────────────────────
+
+model StockIssue {
+  id                 Int              @id @default(autoincrement())
+  issueNumber        String           @unique @map("issue_number") @db.VarChar(30)
+  issuedToEmployeeId Int              @map("issued_to_employee_id")
+  issuedByUserId     Int              @map("issued_by_user_id")
+  issueDate          DateTime         @map("issue_date") @db.Date
+  notes              String?          @db.Text
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  issuedToEmployee   Employee         @relation("StockIssuesReceived", fields: [issuedToEmployeeId], references: [id], onDelete: Restrict)
+  issuedByUser       User             @relation("StockIssuesIssued", fields: [issuedByUserId], references: [id], onDelete: Restrict)
+  items              StockIssueItem[]
+
+  @@index([issuedToEmployeeId], map: "idx_si_employee")
+  @@index([issueDate], map: "idx_si_issue_date")
+  @@index([issuedByUserId], map: "idx_si_issued_by")
+  @@map("stock_issues")
+}
+
+model StockIssueItem {
+  id                 Int              @id @default(autoincrement())
+  stockIssueId       Int              @map("stock_issue_id")
+  stockRequestItemId Int              @map("stock_request_item_id")
+  quantityIssued     Decimal          @map("quantity_issued") @db.Decimal(12, 3)
+
+  stockIssue         StockIssue       @relation(fields: [stockIssueId], references: [id], onDelete: Restrict)
+  stockRequestItem   StockRequestItem @relation(fields: [stockRequestItemId], references: [id], onDelete: Restrict)
+  stockMovement      StockMovement?
+
+  @@unique([stockIssueId, stockRequestItemId], map: "uq_sii_issue_request_item")
+  @@index([stockRequestItemId], map: "idx_sii_request_item")
+  @@map("stock_issue_items")
+}
+
+// ───────────────────────── STOCK ADJUSTMENTS ─────────────────────────
+
+model StockAdjustment {
+  id               Int              @id @default(autoincrement())
+  productId        Int              @map("product_id")
+  adjustmentType   AdjustmentType   @map("adjustment_type")
+  reasonCategory   AdjustmentReason @map("reason_category")
+  quantity         Decimal          @db.Decimal(12, 3)
+  reason           String           @db.Text
+  adjustmentDate   DateTime         @map("adjustment_date") @db.Date
+  adjustedByUserId Int              @map("adjusted_by_user_id")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  product          Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  adjustedByUser   User             @relation("StockAdjustmentsAdjusted", fields: [adjustedByUserId], references: [id], onDelete: Restrict)
+  stockMovement    StockMovement?
+
+  @@index([productId, adjustmentDate], map: "idx_sa_product_date")
+  @@index([adjustedByUserId], map: "idx_sa_adjusted_by")
+  @@map("stock_adjustments")
+}
+
+// ───────────────────────── INVENTORY AND STOCK MOVEMENTS ─────────────────────────
+
+model InventoryBalance {
+  productId      Int             @id @map("product_id")
+  quantityOnHand Decimal         @default(0) @map("quantity_on_hand") @db.Decimal(12, 3)
+  alertLevel     StockAlertLevel @default(out_of_stock) @map("alert_level")
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([alertLevel], map: "idx_bal_alert_level")
+  @@map("inventory_balances")
+}
+
+model StockMovement {
+  id                 BigInt           @id @default(autoincrement())
+  productId          Int              @map("product_id")
+  movementType       MovementType     @map("movement_type")
+  quantityChange     Decimal          @map("quantity_change") @db.Decimal(12, 3)
+  balanceAfter       Decimal          @map("balance_after") @db.Decimal(12, 3)
+  goodsReceiptItemId Int?             @unique @map("goods_receipt_item_id")
+  stockIssueItemId   Int?             @unique @map("stock_issue_item_id")
+  stockAdjustmentId  Int?             @unique @map("stock_adjustment_id")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  product            Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  goodsReceiptItem   GoodsReceiptItem? @relation(fields: [goodsReceiptItemId], references: [id], onDelete: Restrict)
+  stockIssueItem     StockIssueItem?  @relation(fields: [stockIssueItemId], references: [id], onDelete: Restrict)
+  stockAdjustment    StockAdjustment? @relation(fields: [stockAdjustmentId], references: [id], onDelete: Restrict)
+  notifications      Notification[]
+
+  @@index([productId, createdAt], map: "idx_mov_product_date")
+  @@index([movementType], map: "idx_mov_type")
+  @@index([createdAt], map: "idx_mov_created_at")
+  @@map("stock_movements")
+}
+
+// ───────────────────────── NOTIFICATIONS AND AUDIT LOGS ─────────────────────────
+
+model Notification {
+  id                BigInt                 @id @default(autoincrement())
+  productId         Int                    @map("product_id")
+  alertLevel        StockAlertLevel        @map("alert_level")
+  quantityAtTrigger Decimal                @map("quantity_at_trigger") @db.Decimal(12, 3)
+  message           String                 @db.VarChar(255)
+  stockMovementId   BigInt?                @map("stock_movement_id")
+  createdAt         DateTime               @default(now()) @map("created_at") @db.Timestamptz
+
+  product           Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockMovement     StockMovement?         @relation(fields: [stockMovementId], references: [id], onDelete: Restrict)
+  recipients        NotificationRecipient[]
+
+  @@index([productId, createdAt], map: "idx_notif_product_date")
+  @@index([createdAt], map: "idx_notif_created_at")
+  @@index([stockMovementId], map: "idx_notif_movement")
+  @@map("notifications")
+}
+
+model NotificationRecipient {
+  id             BigInt       @id @default(autoincrement())
+  notificationId BigInt       @map("notification_id")
+  userId         Int          @map("user_id")
+  isRead         Boolean      @default(false) @map("is_read")
+  readAt         DateTime?    @map("read_at") @db.Timestamptz
+
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([notificationId, userId], map: "uq_nr_notification_user")
+  @@index([userId, isRead], map: "idx_nr_user_unread")
+  @@map("notification_recipients")
+}
+
+model AuditLog {
+  id         BigInt      @id @default(autoincrement())
+  userId     Int?        @map("user_id")
+  action     AuditAction
+  entityType String      @map("entity_type") @db.VarChar(60)
+  entityId   BigInt      @map("entity_id")
+  oldValues  Json?       @map("old_values")
+  newValues  Json?       @map("new_values")
+  ipAddress  String?     @map("ip_address") @db.Inet
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId], map: "idx_audit_entity")
+  @@index([userId], map: "idx_audit_user")
+  @@index([createdAt], map: "idx_audit_created_at")
+  @@map("audit_logs")
+}

@@ -1,0 +1,638 @@
+// =====================================================================
+// Inventory Management System with Shared Masters  -  Proposed PostgreSQL ERD
+// Scope: single-company inventory of office supplies / IT consumables.
+// NOT an asset-management system (no per-item lifecycle, warranty, repair).
+// Stack: Node.js / Express / TypeScript / PostgreSQL / Prisma (proposed)
+//
+// KEY DESIGN DECISIONS
+//  1. users and employees are separate: employees = people who can receive
+//     stock; users = login accounts (admin-created, 1:1 with an employee).
+//  2. Fixed 3 roles -> roles table + users.role_id. A permissions table is
+//     NOT justified for 3 fixed roles; RBAC is enforced by role code in the API.
+//  3. stock_movements is the append-only LEDGER (source of truth).
+//     inventory_balances is a derived cache updated ONLY in the same DB
+//     transaction as the ledger insert (row lock + CHECK >= 0).
+//  4. Stock moves only on: goods_receipt_items (+), stock_issue_items (-),
+//     stock_adjustments (+/-). POs and requests never touch stock.
+//  5. Request / PO / receipt / issue use header + item tables.
+//  6. Soft delete via is_active on masters; all FKs are ON DELETE RESTRICT.
+//  7. Notifications are created only on alert-tier CHANGE (see
+//     inventory_balances.alert_level), recipients tracked per user.
+//
+// ASSUMPTIONS (confirm with manager)
+//  A. No purchase-approval workflow is modelled. If needed later, add
+//     po_status values + approved_by/approved_at columns (no redesign).
+//  B. Single warehouse / single store location (no location table).
+//  C. Single currency for all prices.
+//  D. critical_stock_level is a per-product configurable value.
+//  E. Over-receiving beyond ordered quantity is rejected by the API.
+//  F. Every issue line fulfils an approved request line (stock_request_item_id is required);
+//     issuing without a request is NOT supported. Confirm with manager if walk-in issues are needed.
+//  G. Partial approval is done per line via quantity_approved.
+//  H. Statuses draft / cancelled (purchase orders) and cancelled (requests) are
+//     OPTIONAL additions, not in the original requirements. Remove if not wanted.
+//
+// ENFORCED IN THE SERVICE LAYER (cannot be a single-row CHECK), always under row locks:
+//  - over-receiving (received > ordered) and over-issuing (issued > approved)
+//  - stock_movements.product_id matching the product of its source line
+//
+// PRISMA NOTE: Prisma cannot express CHECK constraints, the append-only trigger on
+// stock_movements, or num_nonnulls(). Add them in a raw SQL migration
+// (prisma migrate dev --create-only, then edit the generated SQL).
+//
+// Conventions: snake_case, integer identity PKs (bigint for high-volume
+// tables), numeric(12,3) quantities, numeric(12,2)/(14,2) money, timestamptz.
+// =====================================================================
+
+Project inventory_management_system {
+  database_type: 'PostgreSQL'
+  Note: 'Inventory Management System with Shared Masters - proposed ERD'
+}
+
+// ───────────────────────── ENUMS ─────────────────────────
+
+Enum po_status {
+  draft [note: 'OPTIONAL (confirm with manager): being prepared, not yet placed with the supplier']
+  ordered [note: 'Placed with the supplier outside the app']
+  partially_received [note: 'Some quantities received']
+  received [note: 'All ordered quantities received']
+  cancelled [note: 'OPTIONAL (confirm with manager): cancelled before full receipt']
+}
+
+Enum request_status {
+  pending [note: 'Submitted, awaiting review']
+  approved [note: 'Approved (possibly with reduced quantities)']
+  rejected [note: 'Rejected, rejection_reason required']
+  partially_issued [note: 'Some approved quantities issued']
+  issued [note: 'All approved quantities issued']
+  cancelled [note: 'OPTIONAL (confirm with manager): withdrawn by the requester while pending. Not in the original requirements.']
+}
+
+Enum adjustment_type {
+  increase
+  decrease
+}
+
+Enum adjustment_reason {
+  damaged
+  lost
+  count_difference [note: 'Physical stock count difference']
+  other [note: 'Other justified correction']
+}
+
+Enum movement_type {
+  goods_receipt
+  stock_issue
+  adjustment_increase
+  adjustment_decrease
+}
+
+Enum stock_alert_level {
+  normal [note: 'Above the minimum stock level']
+  low [note: 'quantity <= min_stock_level']
+  critical [note: 'quantity <= critical_stock_level']
+  out_of_stock [note: 'quantity = 0']
+}
+
+Enum audit_action {
+  create
+  update
+  deactivate
+  reactivate
+  status_change
+  stock_adjustment
+}
+
+// ───────────────────────── AUTHENTICATION AND USER MANAGEMENT ─────────────────────────
+
+Table roles [headercolor: #4C6EF5] {
+  id integer [pk, increment]
+  code varchar(30) [unique, not null, note: 'Stable machine code: admin | inventory_manager | employee']
+  name varchar(60) [not null]
+  description varchar(255) [null]
+
+  Note: 'Fixed application roles: admin, inventory_manager, employee. Role-based access control is enforced in the API middleware by role code.'
+}
+
+Table users [headercolor: #4C6EF5] {
+  id integer [pk, increment]
+  employee_id integer [unique, not null, note: '1:1 with employees. The person behind the account.']
+  role_id integer [not null]
+  username varchar(50) [unique, not null]
+  password_hash varchar(255) [not null, note: 'Hashed (bcrypt/argon2). Never store plain text.']
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    role_id [name: 'idx_users_role']
+    is_active [name: 'idx_users_active']
+  }
+
+  Note: 'Login accounts. Created only by an Admin (no self-registration). Every account belongs to exactly one employee; not every employee needs an account.'
+}
+
+// ───────────────────────── SHARED MASTERS ─────────────────────────
+
+Table departments [headercolor: #12A594] {
+  id integer [pk, increment]
+  name varchar(100) [unique, not null]
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Company departments (master).'
+}
+
+Table employees [headercolor: #12A594] {
+  id integer [pk, increment]
+  employee_code varchar(30) [unique, not null]
+  full_name varchar(150) [not null]
+  email varchar(255) [unique, null]
+  phone varchar(30) [null]
+  department_id integer [not null]
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    department_id [name: 'idx_employees_department']
+    is_active [name: 'idx_employees_active']
+  }
+
+  Note: 'Company employee master record (HR-style identity). Separate from users so that employees can receive stock without having a login.'
+}
+
+Table categories [headercolor: #12A594] {
+  id integer [pk, increment]
+  name varchar(100) [unique, not null]
+  description varchar(255) [null]
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Product categories (flat list, e.g. Keyboards, Cables, Paper, Stationery).'
+}
+
+Table units [headercolor: #12A594] {
+  id integer [pk, increment]
+  code varchar(20) [unique, not null, note: 'Short code, e.g. pcs, box, ream']
+  name varchar(60) [not null]
+  allows_decimal boolean [not null, default: false, note: 'If false, the API rejects fractional quantities for products using this unit.']
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Units of measure (pcs, box, ream, meter ...).'
+}
+
+Table suppliers [headercolor: #12A594] {
+  id integer [pk, increment]
+  name varchar(150) [unique, not null]
+  contact_person varchar(100) [null]
+  email varchar(255) [null]
+  phone varchar(30) [null]
+  address text [null]
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Supplier master. Selected on purchase orders. No payments or online ordering in this system.'
+}
+
+Table products [headercolor: #12A594] {
+  id integer [pk, increment]
+  sku varchar(50) [unique, not null, note: 'Product code']
+  name varchar(150) [not null]
+  description text [null]
+  category_id integer [not null]
+  unit_id integer [not null]
+  min_stock_level numeric(12,3) [not null, default: 0, note: 'Reorder level. Low-stock alert when quantity_on_hand <= this value.']
+  critical_stock_level numeric(12,3) [not null, default: 0, note: 'Critical alert when quantity_on_hand <= this value (must be <= min_stock_level). 0 disables the critical tier.']
+  is_active boolean [not null, default: true, note: 'Soft delete / deactivate flag. Rows are never hard-deleted.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    category_id [name: 'idx_products_category']
+    unit_id [name: 'idx_products_unit']
+    is_active [name: 'idx_products_active']
+    name [name: 'idx_products_name']
+  }
+
+  checks {
+    `min_stock_level >= 0` [name: 'chk_products_min_stock']
+    `critical_stock_level >= 0 AND critical_stock_level <= min_stock_level` [name: 'chk_products_critical_stock']
+  }
+
+  Note: 'Product master (consumables only). Holds the configurable stock thresholds; current quantity lives in inventory_balances.'
+}
+
+// ───────────────────────── PURCHASE MANAGEMENT ─────────────────────────
+
+Table purchase_orders [headercolor: #F08C00] {
+  id integer [pk, increment]
+  po_number varchar(30) [unique, not null, note: 'Human-readable number generated by the API, e.g. PO-2026-0001']
+  supplier_id integer [not null]
+  order_date date [not null]
+  expected_delivery_date date [null]
+  status po_status [not null, default: 'draft', note: 'draft > ordered > partially_received > received (or cancelled). Updated by the receiving transaction.']
+  total_amount numeric(14,2) [not null, default: 0, note: 'Grand total = SUM(line_total). Stored deliberately as the document total; maintained in the same transaction as the lines.']
+  notes text [null]
+  created_by_user_id integer [not null]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    supplier_id [name: 'idx_po_supplier']
+    status [name: 'idx_po_status']
+    order_date [name: 'idx_po_order_date']
+    created_by_user_id [name: 'idx_po_created_by']
+  }
+
+  checks {
+    `total_amount >= 0` [name: 'chk_po_total_nonneg']
+    `expected_delivery_date IS NULL OR expected_delivery_date >= order_date` [name: 'chk_po_dates']
+  }
+
+  Note: 'Purchase order header. Records an order placed with a supplier OUTSIDE the app. Creating or changing a PO never changes stock. No approval workflow is modelled (not finalised).'
+}
+
+Table purchase_order_items [headercolor: #F08C00] {
+  id integer [pk, increment]
+  purchase_order_id integer [not null]
+  product_id integer [not null]
+  quantity_ordered numeric(12,3) [not null]
+  unit_price numeric(12,2) [not null, note: 'Unit purchase price at order time (single currency assumed).']
+  line_total numeric(14,2) [not null, note: '= round(quantity_ordered * unit_price, 2); enforced by CHECK.']
+
+  indexes {
+    (purchase_order_id, product_id) [unique, name: 'uq_poi_po_product']
+    product_id [name: 'idx_poi_product']
+  }
+
+  checks {
+    `quantity_ordered > 0` [name: 'chk_poi_qty_positive']
+    `unit_price >= 0` [name: 'chk_poi_price_nonneg']
+    `line_total = round(quantity_ordered * unit_price, 2)` [name: 'chk_poi_line_total']
+  }
+
+  Note: 'One product line per purchase order. Outstanding quantity = quantity_ordered - SUM(goods_receipt_items.quantity_received); computed, not stored.'
+}
+
+// ───────────────────────── STOCK RECEIVING ─────────────────────────
+
+Table goods_receipts [headercolor: #2F9E44] {
+  id integer [pk, increment]
+  receipt_number varchar(30) [unique, not null, note: 'e.g. GRN-2026-0001']
+  purchase_order_id integer [not null]
+  received_date date [not null]
+  delivery_reference varchar(100) [null, note: 'Supplier delivery note / challan number, if any.']
+  notes text [null]
+  confirmed_by_user_id integer [not null, note: 'User (Inventory Manager) who confirmed the receiving.']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    purchase_order_id [name: 'idx_gr_po']
+    received_date [name: 'idx_gr_received_date']
+    confirmed_by_user_id [name: 'idx_gr_confirmed_by']
+  }
+
+  Note: 'Receiving record (one delivery) against a purchase order. A PO can have many receipts, which supports partial deliveries.'
+}
+
+Table goods_receipt_items [headercolor: #2F9E44] {
+  id integer [pk, increment]
+  goods_receipt_id integer [not null]
+  purchase_order_item_id integer [not null]
+  quantity_received numeric(12,3) [not null, note: 'Actual quantity received. Service layer rejects over-receiving beyond the ordered quantity.']
+
+  indexes {
+    (goods_receipt_id, purchase_order_item_id) [unique, name: 'uq_gri_receipt_poitem']
+    purchase_order_item_id [name: 'idx_gri_po_item']
+  }
+
+  checks {
+    `quantity_received > 0` [name: 'chk_gri_qty_positive']
+  }
+
+  Note: 'Actual received quantity per PO line in a receipt. Stock increases only by these quantities.'
+}
+
+// ───────────────────────── EMPLOYEE STOCK REQUESTS ─────────────────────────
+
+Table stock_requests [headercolor: #AE3EC9] {
+  id integer [pk, increment]
+  request_number varchar(30) [unique, not null, note: 'e.g. REQ-2026-0001']
+  requested_by_user_id integer [not null]
+  status request_status [not null, default: 'pending']
+  purpose text [null, note: 'Why the items are needed (optional).']
+  reviewed_by_user_id integer [null]
+  reviewed_at timestamptz [null]
+  rejection_reason text [null, note: 'Mandatory when status = rejected.']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (requested_by_user_id, created_at) [name: 'idx_sr_requester_date']
+    status [name: 'idx_sr_status']
+    reviewed_by_user_id [name: 'idx_sr_reviewer']
+  }
+
+  checks {
+    `status <> 'rejected' OR (rejection_reason IS NOT NULL AND reviewed_by_user_id IS NOT NULL)` [name: 'chk_sr_rejection']
+  }
+
+  Note: 'Request header submitted by an employee user. Reviewed (approved/rejected) by the Inventory Manager. Does not touch stock.'
+}
+
+Table stock_request_items [headercolor: #AE3EC9] {
+  id integer [pk, increment]
+  stock_request_id integer [not null]
+  product_id integer [not null]
+  quantity_requested numeric(12,3) [not null]
+  quantity_approved numeric(12,3) [null]
+
+  indexes {
+    (stock_request_id, product_id) [unique, name: 'uq_sri_request_product']
+    product_id [name: 'idx_sri_product']
+  }
+
+  checks {
+    `quantity_requested > 0` [name: 'chk_sri_requested_positive']
+    `quantity_approved IS NULL OR (quantity_approved >= 0 AND quantity_approved <= quantity_requested)` [name: 'chk_sri_approved_range']
+  }
+
+  Note: 'Requested products and quantities. quantity_approved is filled by the Inventory Manager (0 = line rejected). Outstanding to issue = quantity_approved - SUM(quantity_issued).'
+}
+
+// ───────────────────────── STOCK ISSUING ─────────────────────────
+
+Table stock_issues [headercolor: #D6336C] {
+  id integer [pk, increment]
+  issue_number varchar(30) [unique, not null, note: 'e.g. ISS-2026-0001']
+  issued_to_employee_id integer [not null, note: 'Employee who physically receives the products.']
+  issued_by_user_id integer [not null]
+  issue_date date [not null]
+  notes text [null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    issued_to_employee_id [name: 'idx_si_employee']
+    issue_date [name: 'idx_si_issue_date']
+    issued_by_user_id [name: 'idx_si_issued_by']
+  }
+
+  Note: 'Issue transaction header: products handed to an employee. A stock transaction, not an asset assignment.'
+}
+
+Table stock_issue_items [headercolor: #D6336C] {
+  id integer [pk, increment]
+  stock_issue_id integer [not null]
+  stock_request_item_id integer [not null, note: 'Approved request line being fulfilled. The product is taken from this line (no duplicate product_id). Service layer checks the approved-quantity limit.']
+  quantity_issued numeric(12,3) [not null]
+
+  indexes {
+    (stock_issue_id, stock_request_item_id) [unique, name: 'uq_sii_issue_request_item']
+    stock_request_item_id [name: 'idx_sii_request_item']
+  }
+
+  checks {
+    `quantity_issued > 0` [name: 'chk_sii_qty_positive']
+  }
+
+  Note: 'Issued quantity per approved request line. Several issues can fulfil one request line, which supports partial issuing. Stock decreases only from these rows.'
+}
+
+// ───────────────────────── STOCK ADJUSTMENTS ─────────────────────────
+
+Table stock_adjustments [headercolor: #E8590C] {
+  id integer [pk, increment]
+  product_id integer [not null]
+  adjustment_type adjustment_type [not null]
+  reason_category adjustment_reason [not null]
+  quantity numeric(12,3) [not null, note: 'Always positive; direction is given by adjustment_type.']
+  reason text [not null, note: 'Mandatory free-text justification.']
+  adjustment_date date [not null]
+  adjusted_by_user_id integer [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (product_id, adjustment_date) [name: 'idx_sa_product_date']
+    adjusted_by_user_id [name: 'idx_sa_adjusted_by']
+  }
+
+  checks {
+    `quantity > 0` [name: 'chk_sa_qty_positive']
+    `reason_category NOT IN ('damaged', 'lost') OR adjustment_type = 'decrease'` [name: 'chk_sa_reason_matches_type']
+    `length(btrim(reason)) > 0` [name: 'chk_sa_reason_not_blank']
+  }
+
+  Note: 'Traceable manual corrections (damage, loss, physical count difference, other). One row = one product adjustment. Damaged and lost can only be decreases (CHECK).'
+}
+
+// ───────────────────────── INVENTORY AND STOCK MOVEMENTS ─────────────────────────
+
+Table inventory_balances [headercolor: #1C7ED6] {
+  product_id integer [pk]
+  quantity_on_hand numeric(12,3) [not null, default: 0, note: 'Must always equal SUM(stock_movements.quantity_change). CHECK prevents negative stock.']
+  alert_level stock_alert_level [not null, default: 'out_of_stock', note: 'Current tier, recalculated after EVERY movement (up or down). A notification is created only when the tier gets worse, so repeated queries never create duplicates.']
+  updated_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    alert_level [name: 'idx_bal_alert_level']
+  }
+
+  checks {
+    `quantity_on_hand >= 0` [name: 'chk_bal_no_negative_stock']
+  }
+
+  Note: 'Current stock per product (1 row per product, created together with the product). A derived cache of the ledger, updated ONLY by the stock service in the same transaction as the ledger insert, under SELECT ... FOR UPDATE. Never edited by hand.'
+}
+
+Table stock_movements [headercolor: #1C7ED6] {
+  id bigint [pk, increment]
+  product_id integer [not null]
+  movement_type movement_type [not null]
+  quantity_change numeric(12,3) [not null, note: 'Signed: positive = stock in, negative = stock out.']
+  balance_after numeric(12,3) [not null, note: 'Running balance after this movement (computed under row lock).']
+  goods_receipt_item_id integer [unique, null, note: 'Source: receiving line.']
+  stock_issue_item_id integer [unique, null, note: 'Source: issue line.']
+  stock_adjustment_id integer [unique, null, note: 'Source: adjustment.']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (product_id, created_at) [name: 'idx_mov_product_date']
+    movement_type [name: 'idx_mov_type']
+    created_at [name: 'idx_mov_created_at']
+  }
+
+  checks {
+    `quantity_change <> 0` [name: 'chk_mov_nonzero']
+    `balance_after >= 0` [name: 'chk_mov_balance_nonneg']
+    `num_nonnulls(goods_receipt_item_id, stock_issue_item_id, stock_adjustment_id) = 1` [name: 'chk_mov_single_source']
+    `(movement_type = 'goods_receipt' AND quantity_change > 0 AND goods_receipt_item_id IS NOT NULL) OR (movement_type = 'stock_issue' AND quantity_change < 0 AND stock_issue_item_id IS NOT NULL) OR (movement_type = 'adjustment_increase' AND quantity_change > 0 AND stock_adjustment_id IS NOT NULL) OR (movement_type = 'adjustment_decrease' AND quantity_change < 0 AND stock_adjustment_id IS NOT NULL)` [name: 'chk_mov_type_sign_source']
+  }
+
+  Note: 'Append-only stock ledger and single source of truth. Every receive / issue / adjustment writes exactly one row. No UPDATE or DELETE (enforce with a trigger and DB grants).'
+}
+
+// ───────────────────────── NOTIFICATIONS AND AUDIT LOGS ─────────────────────────
+
+Table notifications [headercolor: #5F6B7A] {
+  id bigint [pk, increment]
+  product_id integer [not null]
+  alert_level stock_alert_level [not null, note: 'low, critical or out_of_stock ("normal" is not allowed).']
+  quantity_at_trigger numeric(12,3) [not null]
+  message varchar(255) [not null]
+  stock_movement_id bigint [null, note: 'Ledger row that triggered the alert.']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (product_id, created_at) [name: 'idx_notif_product_date']
+    created_at [name: 'idx_notif_created_at']
+    stock_movement_id [name: 'idx_notif_movement']
+  }
+
+  checks {
+    `alert_level <> 'normal'` [name: 'chk_notif_not_normal']
+  }
+
+  Note: 'One stock-alert event (low / critical / out of stock). Created only when a product moves to a worse alert tier, so repeated stock queries never create duplicates.'
+}
+
+Table notification_recipients [headercolor: #5F6B7A] {
+  id bigint [pk, increment]
+  notification_id bigint [not null]
+  user_id integer [not null]
+  is_read boolean [not null, default: false]
+  read_at timestamptz [null]
+
+  indexes {
+    (notification_id, user_id) [unique, name: 'uq_nr_notification_user']
+    (user_id, is_read) [name: 'idx_nr_user_unread']
+  }
+
+  checks {
+    `(is_read = false AND read_at IS NULL) OR (is_read = true AND read_at IS NOT NULL)` [name: 'chk_nr_read_consistency']
+  }
+
+  Note: 'Delivery + read state per user (M:N between notifications and users). Recipients = active Inventory Managers and Admins.'
+}
+
+Table audit_logs [headercolor: #5F6B7A] {
+  id bigint [pk, increment]
+  user_id integer [null, note: 'NULL for system actions.']
+  action audit_action [not null]
+  entity_type varchar(60) [not null, note: 'Table name, e.g. products']
+  entity_id bigint [not null, note: 'Primary key value of the affected row.']
+  old_values jsonb [null]
+  new_values jsonb [null]
+  ip_address inet [null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (entity_type, entity_id) [name: 'idx_audit_entity']
+    user_id [name: 'idx_audit_user']
+    created_at [name: 'idx_audit_created_at']
+  }
+
+  Note: 'Who did what and when, for create / update / deactivate / status-change / adjustment actions. Append-only. entity_type + entity_id is intentionally polymorphic (no FK) so one table can audit every entity.'
+}
+
+// ───────────────────────── RELATIONSHIPS ─────────────────────────
+// All foreign keys: ON DELETE RESTRICT (history is preserved; use is_active to retire records).
+
+Ref fk_users_employee_id: users.employee_id - employees.id [delete: restrict, update: no action]
+Ref fk_users_role_id: users.role_id > roles.id [delete: restrict, update: no action]
+Ref fk_employees_department_id: employees.department_id > departments.id [delete: restrict, update: no action]
+Ref fk_products_category_id: products.category_id > categories.id [delete: restrict, update: no action]
+Ref fk_products_unit_id: products.unit_id > units.id [delete: restrict, update: no action]
+Ref fk_purchase_orders_supplier_id: purchase_orders.supplier_id > suppliers.id [delete: restrict, update: no action]
+Ref fk_purchase_order_items_purchase_order_id: purchase_order_items.purchase_order_id > purchase_orders.id [delete: restrict, update: no action]
+Ref fk_purchase_order_items_product_id: purchase_order_items.product_id > products.id [delete: restrict, update: no action]
+Ref fk_goods_receipts_purchase_order_id: goods_receipts.purchase_order_id > purchase_orders.id [delete: restrict, update: no action]
+Ref fk_goods_receipt_items_goods_receipt_id: goods_receipt_items.goods_receipt_id > goods_receipts.id [delete: restrict, update: no action]
+Ref fk_goods_receipt_items_purchase_order_item_id: goods_receipt_items.purchase_order_item_id > purchase_order_items.id [delete: restrict, update: no action]
+Ref fk_stock_request_items_stock_request_id: stock_request_items.stock_request_id > stock_requests.id [delete: restrict, update: no action]
+Ref fk_stock_request_items_product_id: stock_request_items.product_id > products.id [delete: restrict, update: no action]
+Ref fk_stock_issue_items_stock_issue_id: stock_issue_items.stock_issue_id > stock_issues.id [delete: restrict, update: no action]
+Ref fk_stock_issue_items_stock_request_item_id: stock_issue_items.stock_request_item_id > stock_request_items.id [delete: restrict, update: no action]
+Ref fk_stock_issues_issued_to_employee_id: stock_issues.issued_to_employee_id > employees.id [delete: restrict, update: no action]
+Ref fk_stock_adjustments_product_id: stock_adjustments.product_id > products.id [delete: restrict, update: no action]
+Ref fk_inventory_balances_product_id: inventory_balances.product_id - products.id [delete: restrict, update: no action]
+Ref fk_stock_movements_product_id: stock_movements.product_id > products.id [delete: restrict, update: no action]
+Ref fk_stock_movements_goods_receipt_item_id: stock_movements.goods_receipt_item_id - goods_receipt_items.id [delete: restrict, update: no action]
+Ref fk_stock_movements_stock_issue_item_id: stock_movements.stock_issue_item_id - stock_issue_items.id [delete: restrict, update: no action]
+Ref fk_stock_movements_stock_adjustment_id: stock_movements.stock_adjustment_id - stock_adjustments.id [delete: restrict, update: no action]
+Ref fk_notifications_product_id: notifications.product_id > products.id [delete: restrict, update: no action]
+Ref fk_notifications_stock_movement_id: notifications.stock_movement_id > stock_movements.id [delete: restrict, update: no action]
+Ref fk_notification_recipients_notification_id: notification_recipients.notification_id > notifications.id [delete: restrict, update: no action]
+Ref fk_notification_recipients_user_id: notification_recipients.user_id > users.id [delete: restrict, update: no action]
+Ref fk_audit_logs_user_id: audit_logs.user_id > users.id [delete: restrict, update: no action]
+Ref fk_purchase_orders_created_by_user_id: purchase_orders.created_by_user_id > users.id [delete: restrict, update: no action]
+Ref fk_goods_receipts_confirmed_by_user_id: goods_receipts.confirmed_by_user_id > users.id [delete: restrict, update: no action]
+Ref fk_stock_requests_requested_by_user_id: stock_requests.requested_by_user_id > users.id [delete: restrict, update: no action]
+Ref fk_stock_requests_reviewed_by_user_id: stock_requests.reviewed_by_user_id > users.id [delete: restrict, update: no action]
+Ref fk_stock_issues_issued_by_user_id: stock_issues.issued_by_user_id > users.id [delete: restrict, update: no action]
+Ref fk_stock_adjustments_adjusted_by_user_id: stock_adjustments.adjusted_by_user_id > users.id [delete: restrict, update: no action]
+
+// ───────────────────────── TABLE GROUPS ─────────────────────────
+
+TableGroup 1_Authentication_and_User_Management {
+  roles
+  users
+  Note: 'Authentication and User Management'
+}
+
+TableGroup 2_Shared_Masters {
+  departments
+  employees
+  categories
+  units
+  suppliers
+  products
+  Note: 'Shared Masters'
+}
+
+TableGroup 3_Purchase_Management {
+  purchase_orders
+  purchase_order_items
+  Note: 'Purchase Management'
+}
+
+TableGroup 4_Stock_Receiving {
+  goods_receipts
+  goods_receipt_items
+  Note: 'Stock Receiving'
+}
+
+TableGroup 5_Employee_Stock_Requests {
+  stock_requests
+  stock_request_items
+  Note: 'Employee Stock Requests'
+}
+
+TableGroup 6_Stock_Issuing {
+  stock_issues
+  stock_issue_items
+  Note: 'Stock Issuing'
+}
+
+TableGroup 7_Stock_Adjustments {
+  stock_adjustments
+  Note: 'Stock Adjustments'
+}
+
+TableGroup 8_Inventory_and_Stock_Movements {
+  inventory_balances
+  stock_movements
+  Note: 'Inventory and Stock Movements'
+}
+
+TableGroup 9_Notifications_and_Audit_Logs {
+  notifications
+  notification_recipients
+  audit_logs
+  Note: 'Notifications and Audit Logs'
+}
