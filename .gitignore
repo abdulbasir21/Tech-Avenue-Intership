@@ -19,6 +19,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Personal Interview Prep - NEVER commit
+# Personal Interview Prep & Junctions - NEVER commit
 MY_INTERVIEW_PREP/
 *INTERVIEW_PRESENTATION_GUIDE*
+week-2-inventory-management-system/
