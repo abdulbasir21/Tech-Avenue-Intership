@@ -3,3 +3,13 @@ node_modules/
 .env.*
 !.env.example
 dist/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+
+# Local scratch & generation scripts
+test.html
+generate_*.py
+build_erd_guide.py
+docs/erd-explained-easy.pdf
