@@ -8,8 +8,10 @@ dist/
 __pycache__/
 *.py[cod]
 
-# Local scratch & generation scripts
+# Local scratch, notes & generation scripts
 test.html
 generate_*.py
 build_erd_guide.py
 docs/erd-explained-easy.pdf
+docs/implementation-log.md
+docs/schema-implementation-report.pdf
