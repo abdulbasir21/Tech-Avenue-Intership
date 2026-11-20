@@ -8,11 +8,20 @@ import apiRoutes from './routes';
 import { AppError } from './utils/AppError';
 
 const app = express();
+app.set('trust proxy', 1);
+
+const allowedOrigins = env.CLIENT_URL.split(',').map((u) => u.trim().replace(/\/+$/, ''));
 
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );

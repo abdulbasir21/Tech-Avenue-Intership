@@ -46,20 +46,22 @@ export function parseDurationMs(expiresIn: string): number {
 }
 
 export function getAuthCookieOptions(): CookieOptions {
+  const isProd = env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/',
     maxAge: parseDurationMs(env.JWT_EXPIRES_IN),
   };
 }
 
 export function getClearCookieOptions(): CookieOptions {
+  const isProd = env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/',
   };
 }

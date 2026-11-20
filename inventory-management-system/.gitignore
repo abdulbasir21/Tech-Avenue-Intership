@@ -17,3 +17,4 @@ docs/implementation-log.md
 docs/schema-implementation-report.pdf
 *.tsbuildinfo
 docs/auth-module-report.md
+.vercel
