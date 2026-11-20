@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"
+        className="fixed top-4 inset-x-3 sm:inset-x-auto sm:right-4 z-50 flex flex-col gap-2 sm:max-w-sm sm:w-full pointer-events-none"
       >
         {toasts.map((toast) => (
           <div
@@ -46,18 +46,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             className="pointer-events-auto flex items-start gap-3 bg-white border border-[#E5E7EB] rounded-xl shadow-card px-4 py-3"
           >
             {toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5" aria-hidden="true" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-[#DC2626] shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-[#DC2626] shrink-0 mt-0.5" aria-hidden="true" />
             )}
-            <p className="text-sm text-[#111827] flex-1 leading-snug">{toast.message}</p>
+            <p className="text-sm text-[#111827] flex-1 min-w-0 break-words leading-snug">
+              {toast.message}
+            </p>
             <button
               type="button"
               onClick={() => dismiss(toast.id)}
               aria-label="Dismiss notification"
-              className="text-[#6B7280] hover:text-[#111827] transition-colors"
+              className="w-9 h-9 sm:w-auto sm:h-auto -mr-1.5 -mt-1 sm:m-0 flex items-center justify-center shrink-0 text-[#6B7280] hover:text-[#111827] transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         ))}

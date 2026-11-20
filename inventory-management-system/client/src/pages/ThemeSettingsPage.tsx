@@ -80,21 +80,21 @@ export function ThemeSettingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[#111827]">Theme Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#111827]">Theme Settings</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">
             Customize the primary colour palette used across buttons, navigation, chips, and table rows
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           {isDirty && (
             <button
               type="button"
               onClick={handleReset}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-sm font-medium text-[#374151] hover:bg-[#F5F6FA] transition-colors"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2.5 min-h-[44px] md:min-h-0 text-sm font-medium text-[#374151] hover:bg-[#F5F6FA] transition-colors"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
               <span>Reset</span>
             </button>
           )}
@@ -103,9 +103,9 @@ export function ThemeSettingsPage() {
             type="button"
             onClick={() => void handleSave()}
             disabled={!canSave}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium px-5 py-2.5 shadow-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium px-5 py-2.5 min-h-[44px] md:min-h-0 shadow-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-4 h-4" aria-hidden="true" />
             <span>{saving ? 'Saving...' : 'Save Theme'}</span>
           </button>
         </div>
@@ -122,16 +122,16 @@ export function ThemeSettingsPage() {
               key={preset.key}
               type="button"
               onClick={() => setSelectedTheme(preset.key)}
-              className={`text-left bg-white rounded-2xl p-5 border transition-all shadow-card ${
+              className={`text-left bg-white rounded-2xl p-4 sm:p-5 border transition-all shadow-card ${
                 isSelected
                   ? 'border-navy ring-2 ring-navy/20'
                   : 'border-[#E5E7EB] hover:border-[#6B7280]/40'
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-4">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
                   <span
-                    className="w-5 h-5 rounded-full border border-[#E5E7EB]"
+                    className="w-5 h-5 rounded-full border border-[#E5E7EB] shrink-0"
                     style={{ backgroundColor: preset.primary }}
                   />
                   <span className="text-base font-semibold text-[#111827]">{preset.label}</span>
@@ -143,8 +143,8 @@ export function ThemeSettingsPage() {
                 </div>
 
                 {isSelected && (
-                  <span className="w-6 h-6 rounded-full bg-navy text-white flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5" />
+                  <span className="w-6 h-6 rounded-full bg-navy text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" aria-hidden="true" />
                   </span>
                 )}
               </div>
@@ -176,7 +176,7 @@ export function ThemeSettingsPage() {
 
               {/* Mini Preview */}
               <div className="rounded-xl border border-[#E5E7EB] overflow-hidden bg-white">
-                <div className="px-3 py-2 flex items-center justify-between border-b border-[#E5E7EB]">
+                <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-1.5 border-b border-[#E5E7EB]">
                   <span
                     className="px-2.5 py-1 rounded-md text-[11px] font-medium"
                     style={{ backgroundColor: preset.primarySoft, color: preset.primary }}
@@ -191,7 +191,7 @@ export function ThemeSettingsPage() {
                   </span>
                 </div>
                 <div
-                  className="px-3 py-2 text-[11px] text-[#374151] flex items-center justify-between"
+                  className="px-3 py-2 text-[11px] text-[#374151] flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
                   style={{ backgroundColor: preset.rowTint }}
                 >
                   <span>#U0001 &bull; System Admin</span>
@@ -205,17 +205,17 @@ export function ThemeSettingsPage() {
 
       {/* Custom Colour Card */}
       <section
-        className={`bg-white rounded-2xl p-6 border transition-all shadow-card ${
+        className={`bg-white rounded-2xl p-4 sm:p-6 border transition-all shadow-card ${
           selectedTheme === 'custom' ? 'border-navy ring-2 ring-navy/20' : 'border-[#E5E7EB]'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-icon-chip text-navy flex items-center justify-center">
-              <Palette className="w-5 h-5" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-icon-chip text-navy flex items-center justify-center shrink-0">
+              <Palette className="w-5 h-5" aria-hidden="true" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base font-semibold text-[#111827]">Custom Colour</h2>
                 {activeTheme === 'custom' && (
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#E8F7EE] text-[#16A34A]">
@@ -232,7 +232,7 @@ export function ThemeSettingsPage() {
           <button
             type="button"
             onClick={() => setSelectedTheme('custom')}
-            className={`px-3.5 py-1.5 rounded-[10px] text-xs font-medium border transition-colors self-start sm:self-auto ${
+            className={`w-full sm:w-auto min-h-[44px] md:min-h-0 px-3.5 py-2 md:py-1.5 rounded-[10px] text-xs font-medium border transition-colors self-start sm:self-auto shrink-0 ${
               selectedTheme === 'custom'
                 ? 'bg-navy text-white border-navy'
                 : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-[#F5F6FA]'
@@ -244,7 +244,7 @@ export function ThemeSettingsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-end gap-3">
               <label htmlFor="custom-color-picker" className="sr-only">
                 Pick custom primary colour
               </label>
@@ -256,9 +256,9 @@ export function ThemeSettingsPage() {
                   setSelectedTheme('custom');
                   setCustomHex(e.target.value.toUpperCase());
                 }}
-                className="w-12 h-11 rounded-lg border border-[#E5E7EB] cursor-pointer p-1 bg-white"
+                className="w-12 h-11 rounded-lg border border-[#E5E7EB] cursor-pointer p-1 bg-white shrink-0"
               />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label htmlFor="custom-hex-input" className="block text-xs font-medium text-[#374151] mb-1">
                   Hex Colour Code
                 </label>
@@ -272,7 +272,7 @@ export function ThemeSettingsPage() {
                   }}
                   placeholder="#0F766E"
                   maxLength={7}
-                  className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] font-mono focus:outline-none focus:border-navy"
+                  className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] font-mono focus:outline-none focus:border-navy"
                 />
               </div>
             </div>
@@ -288,7 +288,7 @@ export function ThemeSettingsPage() {
                 role="alert"
                 className="rounded-xl border border-[#F59E0B]/40 bg-[#FFF4E5] px-3.5 py-2.5 flex items-start gap-2.5 text-xs text-[#374151]"
               >
-                <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" aria-hidden="true" />
                 <span>
                   This colour is too light for white button text (contrast ratio{' '}
                   <strong>{customContrast.toFixed(2)}:1</strong>; minimum required is 4.5:1). Please pick a darker colour to save.
@@ -305,8 +305,8 @@ export function ThemeSettingsPage() {
 
           {/* Derived Swatches + Mini Preview */}
           <div className="rounded-xl border border-[#E5E7EB] overflow-hidden bg-white">
-            <div className="px-4 py-2.5 border-b border-[#E5E7EB] flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-3 text-xs text-[#6B7280]">
+            <div className="px-3 sm:px-4 py-2.5 border-b border-[#E5E7EB] flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-[#6B7280]">
                 <span className="inline-flex items-center gap-1.5">
                   <span
                     className="w-3.5 h-3.5 rounded border border-[#E5E7EB]"
@@ -337,7 +337,7 @@ export function ThemeSettingsPage() {
               </span>
             </div>
             <div
-              className="px-4 py-2.5 text-xs text-[#374151] flex items-center justify-between"
+              className="px-3 sm:px-4 py-2.5 text-xs text-[#374151] flex flex-wrap items-center justify-between gap-2"
               style={{ backgroundColor: derivedCustom.rowTint }}
             >
               <span>#U0001 &bull; Alternating Table Row</span>

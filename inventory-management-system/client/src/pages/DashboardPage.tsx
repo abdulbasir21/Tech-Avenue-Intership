@@ -123,7 +123,7 @@ export function DashboardPage() {
       {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[#111827]">
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#111827] break-words">
             Welcome back, {currentUser?.fullName}!
           </h1>
           <p className="text-sm text-[#6B7280] mt-0.5">Manage users and access</p>
@@ -142,9 +142,9 @@ export function DashboardPage() {
       {/* Users Table Card */}
       <section className="bg-white border border-[#E5E7EB] rounded-2xl shadow-card overflow-hidden">
         {/* Filter Bar */}
-        <div className="p-4 sm:p-5 border-b border-[#E5E7EB] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="p-3.5 sm:p-5 border-b border-[#E5E7EB] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="relative w-full lg:flex-1 lg:max-w-md">
-            <Search className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
             <input
               type="search"
               value={searchInput}
@@ -155,7 +155,7 @@ export function DashboardPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-2.5 w-full lg:w-auto">
             <select
               value={roleFilter}
               onChange={(e) => {
@@ -163,7 +163,7 @@ export function DashboardPage() {
                 setPage(1);
               }}
               aria-label="Filter by role"
-              className="w-full md:w-auto rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 min-h-[44px] md:min-h-0 text-sm text-[#374151] focus:outline-none focus:border-navy"
+              className="w-full md:w-auto min-w-0 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 min-h-[44px] md:min-h-0 text-sm text-[#374151] focus:outline-none focus:border-navy"
             >
               <option value="all">All Roles</option>
               {roles.map((r) => (
@@ -180,7 +180,7 @@ export function DashboardPage() {
                 setPage(1);
               }}
               aria-label="Filter by status"
-              className="w-full md:w-auto rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 min-h-[44px] md:min-h-0 text-sm text-[#374151] focus:outline-none focus:border-navy"
+              className="w-full md:w-auto min-w-0 rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 min-h-[44px] md:min-h-0 text-sm text-[#374151] focus:outline-none focus:border-navy"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -196,7 +196,7 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={() => void fetchUsers()}
-              className="px-4 py-2 rounded-[10px] bg-navy text-white text-sm font-medium hover:bg-navy-hover"
+              className="px-4 py-2 min-h-[44px] md:min-h-0 rounded-[10px] bg-navy text-white text-sm font-medium hover:bg-navy-hover"
             >
               Retry
             </button>
@@ -239,7 +239,7 @@ export function DashboardPage() {
                 users.map((u) => {
                   const isSelf = currentUser?.id === u.id;
                   return (
-                    <div key={u.id} className="p-4 space-y-3 bg-white even:bg-table-alt">
+                    <div key={u.id} className="p-3.5 sm:p-4 space-y-3 bg-white even:bg-table-alt">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="w-9 h-9 rounded-full bg-icon-chip text-navy text-xs font-semibold flex items-center justify-center shrink-0">
@@ -264,22 +264,22 @@ export function DashboardPage() {
                         </span>
                       </div>
 
-                      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-                        <div>
+                      <dl className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-xs">
+                        <div className="min-w-0">
                           <dt className="text-[#6B7280]">User ID</dt>
                           <dd className="font-medium text-[#111827]">{formatUserId(u.id)}</dd>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <dt className="text-[#6B7280]">Joined Date</dt>
                           <dd className="font-medium text-[#111827]">
                             {formatDateDDMMYYYY(u.createdAt)}
                           </dd>
                         </div>
-                        <div>
+                        <div className="col-span-2 min-w-0">
                           <dt className="text-[#6B7280]">Role</dt>
-                          <dd className="font-medium text-[#111827]">{u.roleName}</dd>
+                          <dd className="font-medium text-[#111827] break-words">{u.roleName}</dd>
                         </div>
-                        <div className="min-w-0">
+                        <div className="col-span-2 min-w-0">
                           <dt className="text-[#6B7280]">Email</dt>
                           <dd className="font-medium text-[#111827] break-all">
                             {u.email || '—'}
@@ -293,7 +293,7 @@ export function DashboardPage() {
                           onClick={() => handleOpenEdit(u)}
                           className="inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-[10px] border border-[#E5E7EB] bg-white text-xs font-medium text-[#374151] hover:bg-icon-chip hover:text-navy transition-colors"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" aria-hidden="true" />
                           <span>Edit</span>
                         </button>
                         <button
@@ -302,7 +302,7 @@ export function DashboardPage() {
                           disabled={isSelf}
                           className="inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-[10px] border border-[#E5E7EB] bg-white text-xs font-medium text-[#DC2626] hover:bg-[#FFF1F2] transition-colors disabled:opacity-35 disabled:cursor-not-allowed"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
                           <span>Delete</span>
                         </button>
                       </div>
@@ -313,7 +313,7 @@ export function DashboardPage() {
             </div>
 
             {/* Desktop Table (768px and wider) */}
-            <div className="hidden md:block overflow-x-auto">
+            <div tabIndex={0} role="region" aria-label="Users table" className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#E5E7EB] bg-white">
@@ -450,34 +450,34 @@ export function DashboardPage() {
         )}
 
         {/* Pagination Footer */}
-        <div className="px-4 sm:px-5 py-3.5 border-t border-[#E5E7EB] flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
+        <div className="px-3.5 sm:px-5 py-3.5 border-t border-[#E5E7EB] flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white">
           <p className="text-xs text-[#6B7280] text-center md:text-left">
             Showing <span className="font-medium text-[#111827]">{startItem}</span>–
             <span className="font-medium text-[#111827]">{endItem}</span> of{' '}
             <span className="font-medium text-[#111827]">{pagination.total}</span> users
           </p>
 
-          <div className="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto">
+          <div className="flex items-center justify-between md:justify-end gap-1.5 sm:gap-2 w-full md:w-auto">
             <button
               type="button"
               disabled={pagination.page <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1 px-3 py-2 md:px-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F5F6FA] disabled:opacity-45"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 md:py-1.5 min-h-[44px] md:min-h-0 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F5F6FA] disabled:opacity-45"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Prev</span>
             </button>
-            <span className="px-2 text-xs font-medium text-[#374151] whitespace-nowrap">
+            <span className="px-1.5 sm:px-2 text-xs font-medium text-[#374151] whitespace-nowrap">
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
               type="button"
               disabled={pagination.page >= pagination.totalPages || loading}
               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1 px-3 py-2 md:px-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F5F6FA] disabled:opacity-45"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-2 md:py-1.5 min-h-[44px] md:min-h-0 rounded-lg border border-[#E5E7EB] text-xs font-medium text-[#374151] hover:bg-[#F5F6FA] disabled:opacity-45"
             >
               <span>Next</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>

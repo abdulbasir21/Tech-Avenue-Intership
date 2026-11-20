@@ -34,17 +34,17 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6FA] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md bg-white border border-[#E5E7EB] rounded-2xl shadow-card p-8">
+    <div className="min-h-screen min-h-[100dvh] bg-[#F5F6FA] flex items-center justify-center px-3 sm:px-4 py-8 sm:py-10">
+      <div className="w-full max-w-md bg-white border border-[#E5E7EB] rounded-2xl shadow-card p-5 sm:p-8">
         {/* Logo */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-12 h-12 rounded-2xl bg-icon-chip text-navy flex items-center justify-center mb-3">
-            <Boxes className="w-6 h-6" />
+            <Boxes className="w-6 h-6" aria-hidden="true" />
           </div>
           <span className="text-xs font-semibold uppercase tracking-wider text-navy">
             Inventory Management System
           </span>
-          <h1 className="text-2xl font-semibold text-[#111827] mt-1">Sign in to IMS</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#111827] mt-1">Sign in to IMS</h1>
           <p className="text-sm text-[#6B7280] mt-1">
             Enter your admin-assigned credentials to continue
           </p>
@@ -65,7 +65,7 @@ export function LoginPage() {
               Username
             </label>
             <div className="relative">
-              <UserIcon className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <UserIcon className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
               <input
                 id="login-username"
                 type="text"
@@ -74,7 +74,7 @@ export function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
-                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-3.5 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-navy"
+                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-3.5 py-2.5 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
               />
             </div>
           </div>
@@ -84,7 +84,7 @@ export function LoginPage() {
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Lock className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
               <input
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
@@ -92,15 +92,15 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-10 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-navy"
+                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-12 md:pr-10 py-2.5 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#111827]"
+                className="absolute right-1 md:right-3.5 top-1/2 -translate-y-1/2 w-10 h-10 md:w-auto md:h-auto flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -108,7 +108,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full mt-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium py-2.5 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full mt-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium py-2.5 min-h-[44px] md:min-h-0 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {submitting && (
               <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />

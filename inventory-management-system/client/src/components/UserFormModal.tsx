@@ -171,10 +171,10 @@ export function UserFormModal({
           if (!inside) onClose();
         }
       }}
-      className="w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-card overflow-hidden open:flex open:flex-col"
+      className="w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-card overflow-hidden open:flex open:flex-col"
     >
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#E5E7EB] shrink-0">
-        <div>
+        <div className="min-w-0 pr-2">
           <h2 id="user-modal-title" className="text-lg font-semibold text-[#111827]">
             {isEditing ? 'Edit User' : 'Add New User'}
           </h2>
@@ -191,7 +191,7 @@ export function UserFormModal({
           aria-label="Close dialog"
           className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[#6B7280] hover:bg-[#F5F6FA] hover:text-[#111827] transition-colors shrink-0"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
 
@@ -218,7 +218,7 @@ export function UserFormModal({
               onChange={(e) => setFullName(e.target.value)}
               aria-invalid={Boolean(fieldErrors.fullName)}
               placeholder="e.g. Sarah Wilson"
-              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
+              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
             {fieldErrors.fullName && (
               <p className="mt-1 text-xs text-[#DC2626]">{fieldErrors.fullName}</p>
@@ -236,7 +236,7 @@ export function UserFormModal({
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={Boolean(fieldErrors.email)}
               placeholder="sarah@example.com"
-              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
+              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
             {fieldErrors.email && (
               <p className="mt-1 text-xs text-[#DC2626]">{fieldErrors.email}</p>
@@ -254,7 +254,7 @@ export function UserFormModal({
               onChange={(e) => setUsername(e.target.value)}
               aria-invalid={Boolean(fieldErrors.username)}
               placeholder="sarah.wilson"
-              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
+              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
             {fieldErrors.username && (
               <p className="mt-1 text-xs text-[#DC2626]">{fieldErrors.username}</p>
@@ -274,15 +274,15 @@ export function UserFormModal({
                 onChange={(e) => setPassword(e.target.value)}
                 aria-invalid={Boolean(fieldErrors.password)}
                 placeholder={isEditing ? 'Leave blank to keep current password' : 'Minimum 8 characters'}
-                className="w-full rounded-[10px] border border-[#E5E7EB] pl-3.5 pr-10 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
+                className="w-full rounded-[10px] border border-[#E5E7EB] pl-3.5 pr-12 md:pr-10 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#111827]"
+                className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 w-10 h-10 md:w-auto md:h-auto flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
             {fieldErrors.password && (
@@ -300,7 +300,7 @@ export function UserFormModal({
               onChange={(e) => setRoleId(e.target.value)}
               disabled={isEditingSelf}
               aria-invalid={Boolean(fieldErrors.roleId)}
-              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy disabled:bg-[#F5F6FA] disabled:text-[#6B7280]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy disabled:bg-[#F5F6FA] disabled:text-[#6B7280]"
             >
               <option value="">Select role</option>
               {roles.map((r) => (
@@ -323,7 +323,7 @@ export function UserFormModal({
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
               aria-invalid={Boolean(fieldErrors.departmentId)}
-              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
+              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 min-h-[44px] md:min-h-0 text-sm text-[#111827] focus:outline-none focus:border-navy"
             >
               <option value="">Select department</option>
               {departments.map((d) => (
@@ -338,7 +338,7 @@ export function UserFormModal({
           </div>
 
           {isEditing && (
-            <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-[#F5F6FA] px-4 py-2.5">
+            <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-[#E5E7EB] bg-[#F5F6FA] px-4 py-2.5">
               <div>
                 <p className="text-sm font-medium text-[#111827]">Account Status</p>
                 <p className="text-xs text-[#6B7280]">
@@ -353,7 +353,7 @@ export function UserFormModal({
                 aria-checked={isActive}
                 disabled={isEditingSelf}
                 onClick={() => setIsActive((prev) => !prev)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors disabled:opacity-60 ${
+                className={`min-h-[44px] sm:min-h-0 px-4 sm:px-3 py-2 sm:py-1 self-start sm:self-auto shrink-0 rounded-full text-xs font-medium transition-colors disabled:opacity-60 ${
                   isActive
                     ? 'bg-[#E8F7EE] text-[#16A34A]'
                     : 'bg-[#FFF4E5] text-[#F59E0B]'
@@ -365,19 +365,19 @@ export function UserFormModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E5E7EB]">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5 sm:gap-3 pt-3 border-t border-[#E5E7EB]">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-4 py-2 rounded-[10px] border border-[#E5E7EB] bg-white text-sm font-medium text-[#374151] hover:bg-[#F5F6FA] transition-colors"
+            className="w-full sm:w-auto min-h-[44px] md:min-h-0 px-4 py-2 rounded-[10px] border border-[#E5E7EB] bg-white text-sm font-medium text-[#374151] hover:bg-[#F5F6FA] transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-5 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium transition-colors disabled:opacity-60"
+            className="w-full sm:w-auto min-h-[44px] md:min-h-0 px-5 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium transition-colors disabled:opacity-60"
           >
             {submitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create User'}
           </button>
