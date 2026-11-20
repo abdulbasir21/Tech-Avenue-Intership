@@ -15,3 +15,4 @@ build_erd_guide.py
 docs/erd-explained-easy.pdf
 docs/implementation-log.md
 docs/schema-implementation-report.pdf
+*.tsbuildinfo
