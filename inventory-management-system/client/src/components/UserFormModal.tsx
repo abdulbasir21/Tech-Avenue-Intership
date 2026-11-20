@@ -171,9 +171,9 @@ export function UserFormModal({
           if (!inside) onClose();
         }
       }}
-      className="w-full max-w-lg rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-card"
+      className="w-[calc(100%-2rem)] max-w-lg max-h-[90dvh] rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-card overflow-hidden open:flex open:flex-col"
     >
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#E5E7EB] shrink-0">
         <div>
           <h2 id="user-modal-title" className="text-lg font-semibold text-[#111827]">
             {isEditing ? 'Edit User' : 'Add New User'}
@@ -189,13 +189,13 @@ export function UserFormModal({
           onClick={onClose}
           disabled={submitting}
           aria-label="Close dialog"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6B7280] hover:bg-[#F5F6FA] hover:text-[#111827] transition-colors"
+          className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[#6B7280] hover:bg-[#F5F6FA] hover:text-[#111827] transition-colors shrink-0"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="p-4 sm:p-6 space-y-4 overflow-y-auto">
         {formError && (
           <div
             role="alert"
@@ -370,14 +370,14 @@ export function UserFormModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 rounded-[10px] border border-[#E5E7EB] bg-white text-sm font-medium text-[#374151] hover:bg-[#F5F6FA] transition-colors"
+            className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-4 py-2 rounded-[10px] border border-[#E5E7EB] bg-white text-sm font-medium text-[#374151] hover:bg-[#F5F6FA] transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium transition-colors disabled:opacity-60"
+            className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-5 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium transition-colors disabled:opacity-60"
           >
             {submitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create User'}
           </button>

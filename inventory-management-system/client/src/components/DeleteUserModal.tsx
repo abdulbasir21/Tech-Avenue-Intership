@@ -80,9 +80,9 @@ export function DeleteUserModal({ open, user, onClose, onSuccess }: DeleteUserMo
         e.preventDefault();
         if (!submitting) onClose();
       }}
-      className="w-full max-w-md rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-card"
+      className="w-[calc(100%-2rem)] max-w-md max-h-[90dvh] rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-card overflow-hidden open:flex open:flex-col"
     >
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#E5E7EB] shrink-0">
         <h2 id="delete-modal-title" className="text-lg font-semibold text-[#111827]">
           Delete User
         </h2>
@@ -91,13 +91,13 @@ export function DeleteUserModal({ open, user, onClose, onSuccess }: DeleteUserMo
           onClick={onClose}
           disabled={submitting}
           aria-label="Close dialog"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6B7280] hover:bg-[#F5F6FA] hover:text-[#111827]"
+          className="w-11 h-11 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[#6B7280] hover:bg-[#F5F6FA] hover:text-[#111827]"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
         {restrictedMessage ? (
           <div className="rounded-xl border border-[#F59E0B]/40 bg-[#FFF4E5] p-4 flex gap-3">
             <AlertTriangle className="w-5 h-5 text-[#F59E0B] shrink-0 mt-0.5" />
@@ -121,7 +121,7 @@ export function DeleteUserModal({ open, user, onClose, onSuccess }: DeleteUserMo
             autoFocus
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 rounded-[10px] border border-[#E5E7EB] bg-white text-sm font-medium text-[#374151] hover:bg-[#F5F6FA]"
+            className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-4 py-2 rounded-[10px] border border-[#E5E7EB] bg-white text-sm font-medium text-[#374151] hover:bg-[#F5F6FA]"
           >
             Cancel
           </button>
@@ -131,7 +131,7 @@ export function DeleteUserModal({ open, user, onClose, onSuccess }: DeleteUserMo
               type="button"
               onClick={handleDeactivate}
               disabled={submitting || !user?.isActive}
-              className="px-4 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium disabled:opacity-60"
+              className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-4 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium disabled:opacity-60"
             >
               {submitting ? 'Deactivating...' : 'Deactivate User Instead'}
             </button>
@@ -140,7 +140,7 @@ export function DeleteUserModal({ open, user, onClose, onSuccess }: DeleteUserMo
               type="button"
               onClick={handleDelete}
               disabled={submitting}
-              className="px-4 py-2 rounded-[10px] bg-[#DC2626] hover:bg-[#B91C1C] text-white text-sm font-medium disabled:opacity-60"
+              className="flex-1 sm:flex-initial min-h-[44px] md:min-h-0 px-4 py-2 rounded-[10px] bg-[#DC2626] hover:bg-[#B91C1C] text-white text-sm font-medium disabled:opacity-60"
             >
               {submitting ? 'Deleting...' : 'Delete User'}
             </button>

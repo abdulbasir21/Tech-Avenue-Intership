@@ -10,10 +10,12 @@
 }
 
 @layer base {
+  html,
   body {
     font-family: 'Poppins', sans-serif;
     background-color: #F5F6FA;
     color: #374151;
+    overflow-x: hidden;
   }
 }
 
