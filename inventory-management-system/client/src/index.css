@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #1E3A8A;
+  --color-primary-hover: #172E6E;
+  --color-primary-soft: #EAF0FF;
+  --color-row-tint: #F7F9FF;
+}
+
 @layer base {
   body {
     font-family: 'Poppins', sans-serif;

@@ -13,7 +13,7 @@ export function WelcomePage() {
       <header className="bg-white border-b border-[#E5E7EB] px-4 sm:px-6 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#1E3A8A] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-navy flex items-center justify-center">
               <Boxes className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-bold text-[#111827]">IMS</span>
@@ -21,7 +21,7 @@ export function WelcomePage() {
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-[#EAF0FF] text-[#1E3A8A] text-xs font-semibold flex items-center justify-center">
+              <span className="w-8 h-8 rounded-full bg-icon-chip text-navy text-xs font-semibold flex items-center justify-center">
                 {getInitials(user.fullName)}
               </span>
               <span className="hidden sm:inline text-sm font-medium text-[#111827]">
@@ -43,14 +43,14 @@ export function WelcomePage() {
       {/* Centered Welcome Card */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg bg-white border border-[#E5E7EB] rounded-2xl shadow-card p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#EAF0FF] text-[#1E3A8A] flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-icon-chip text-navy flex items-center justify-center mx-auto mb-4">
             <ShieldCheck className="w-7 h-7" />
           </div>
 
           <h1 className="text-2xl font-semibold text-[#111827]">Welcome, {user.fullName}</h1>
 
           <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#EAF0FF] text-[#1E3A8A]">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-icon-chip text-navy">
               {user.roleName}
             </span>
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#E8F7EE] text-[#16A34A]">
@@ -80,7 +80,7 @@ export function WelcomePage() {
           <button
             type="button"
             onClick={() => void logout()}
-            className="mt-6 inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#1E3A8A] hover:bg-[#172E6E] text-white text-sm font-medium px-6 py-2.5 transition-colors"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium px-6 py-2.5 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>

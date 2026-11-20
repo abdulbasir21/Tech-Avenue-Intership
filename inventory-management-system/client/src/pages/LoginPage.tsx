@@ -38,10 +38,10 @@ export function LoginPage() {
       <div className="w-full max-w-md bg-white border border-[#E5E7EB] rounded-2xl shadow-card p-8">
         {/* Logo */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#EAF0FF] text-[#1E3A8A] flex items-center justify-center mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-icon-chip text-navy flex items-center justify-center mb-3">
             <Boxes className="w-6 h-6" />
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#1E3A8A]">
+          <span className="text-xs font-semibold uppercase tracking-wider text-navy">
             Inventory Management System
           </span>
           <h1 className="text-2xl font-semibold text-[#111827] mt-1">Sign in to IMS</h1>
@@ -74,7 +74,7 @@ export function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
-                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-3.5 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-3.5 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-navy"
               />
             </div>
           </div>
@@ -92,7 +92,7 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
-                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-10 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+                className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-10 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-navy"
               />
               <button
                 type="button"
@@ -108,7 +108,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full mt-2 rounded-[10px] bg-[#1E3A8A] hover:bg-[#172E6E] text-white text-sm font-medium py-2.5 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full mt-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium py-2.5 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {submitting && (
               <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />

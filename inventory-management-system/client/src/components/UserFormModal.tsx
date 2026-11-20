@@ -218,7 +218,7 @@ export function UserFormModal({
               onChange={(e) => setFullName(e.target.value)}
               aria-invalid={Boolean(fieldErrors.fullName)}
               placeholder="e.g. Sarah Wilson"
-              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
             {fieldErrors.fullName && (
               <p className="mt-1 text-xs text-[#DC2626]">{fieldErrors.fullName}</p>
@@ -236,7 +236,7 @@ export function UserFormModal({
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={Boolean(fieldErrors.email)}
               placeholder="sarah@example.com"
-              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
             {fieldErrors.email && (
               <p className="mt-1 text-xs text-[#DC2626]">{fieldErrors.email}</p>
@@ -254,7 +254,7 @@ export function UserFormModal({
               onChange={(e) => setUsername(e.target.value)}
               aria-invalid={Boolean(fieldErrors.username)}
               placeholder="sarah.wilson"
-              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
             {fieldErrors.username && (
               <p className="mt-1 text-xs text-[#DC2626]">{fieldErrors.username}</p>
@@ -274,7 +274,7 @@ export function UserFormModal({
                 onChange={(e) => setPassword(e.target.value)}
                 aria-invalid={Boolean(fieldErrors.password)}
                 placeholder={isEditing ? 'Leave blank to keep current password' : 'Minimum 8 characters'}
-                className="w-full rounded-[10px] border border-[#E5E7EB] pl-3.5 pr-10 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+                className="w-full rounded-[10px] border border-[#E5E7EB] pl-3.5 pr-10 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
               />
               <button
                 type="button"
@@ -300,7 +300,7 @@ export function UserFormModal({
               onChange={(e) => setRoleId(e.target.value)}
               disabled={isEditingSelf}
               aria-invalid={Boolean(fieldErrors.roleId)}
-              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A] disabled:bg-[#F5F6FA] disabled:text-[#6B7280]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy disabled:bg-[#F5F6FA] disabled:text-[#6B7280]"
             >
               <option value="">Select role</option>
               {roles.map((r) => (
@@ -323,7 +323,7 @@ export function UserFormModal({
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
               aria-invalid={Boolean(fieldErrors.departmentId)}
-              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] bg-white px-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
             >
               <option value="">Select department</option>
               {departments.map((d) => (
@@ -377,7 +377,7 @@ export function UserFormModal({
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2 rounded-[10px] bg-[#1E3A8A] hover:bg-[#172E6E] text-white text-sm font-medium transition-colors disabled:opacity-60"
+            className="px-5 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium transition-colors disabled:opacity-60"
           >
             {submitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create User'}
           </button>

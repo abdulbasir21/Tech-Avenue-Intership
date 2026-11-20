@@ -114,10 +114,24 @@ model User {
   stockAdjustmentsAdjusted StockAdjustment[]      @relation("StockAdjustmentsAdjusted")
   notificationRecipients   NotificationRecipient[]
   auditLogs                AuditLog[]
+  themeSettingsUpdated     ThemeSetting[]         @relation("ThemeSettingsUpdatedBy")
 
   @@index([roleId], map: "idx_users_role")
   @@index([isActive], map: "idx_users_active")
   @@map("users")
+}
+
+model ThemeSetting {
+  id                 Int      @id @default(autoincrement())
+  activeTheme        String   @default("default") @map("active_theme") @db.VarChar(30)
+  customPrimaryColor String?  @map("custom_primary_color") @db.VarChar(7)
+  updatedByUserId    Int?     @map("updated_by_user_id")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  updatedByUser      User?    @relation("ThemeSettingsUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([updatedByUserId], map: "idx_theme_settings_updated_by")
+  @@map("theme_settings")
 }
 
 // ───────────────────────── SHARED MASTERS ─────────────────────────

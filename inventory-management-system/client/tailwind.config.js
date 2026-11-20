@@ -8,8 +8,8 @@ export default {
       },
       colors: {
         navy: {
-          DEFAULT: '#1E3A8A',
-          hover: '#172E6E',
+          DEFAULT: 'var(--color-primary)',
+          hover: 'var(--color-primary-hover)',
         },
         page: '#F5F6FA',
         surface: '#FFFFFF',
@@ -17,8 +17,8 @@ export default {
         heading: '#111827',
         body: '#374151',
         muted: '#6B7280',
-        'icon-chip': '#EAF0FF',
-        'table-alt': '#F7F9FF',
+        'icon-chip': 'var(--color-primary-soft)',
+        'table-alt': 'var(--color-row-tint)',
         'active-text': '#16A34A',
         'active-bg': '#E8F7EE',
         'inactive-text': '#F59E0B',

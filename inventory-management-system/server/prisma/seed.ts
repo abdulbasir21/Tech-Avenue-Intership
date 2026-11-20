@@ -223,6 +223,19 @@ async function main() {
   });
 
   console.log(`✓ Users seeded: ${adminUser.username} (admin), ${managerUser.username} (inventory_manager), ${employeeUser.username} (employee)`);
+
+  // 7. Seed default theme setting if none exists
+  const existingTheme = await prisma.themeSetting.findFirst({ orderBy: { id: 'asc' } });
+  if (!existingTheme) {
+    await prisma.themeSetting.create({
+      data: {
+        activeTheme: 'default',
+        customPrimaryColor: null,
+      },
+    });
+  }
+  console.log('✓ Theme settings seeded (default)');
+
   console.log('--- Database Seeding Completed Successfully ---');
 }
 

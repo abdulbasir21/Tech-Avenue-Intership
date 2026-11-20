@@ -132,7 +132,7 @@ export function DashboardPage() {
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#1E3A8A] hover:bg-[#172E6E] text-white text-sm font-medium px-4 py-2.5 shadow-card transition-colors self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium px-4 py-2.5 shadow-card transition-colors self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add User</span>
@@ -151,7 +151,7 @@ export function DashboardPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by name, email, or username..."
               aria-label="Search users"
-              className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-[#1E3A8A]"
+              className="w-full rounded-[10px] border border-[#E5E7EB] pl-10 pr-3.5 py-2 text-sm text-[#111827] focus:outline-none focus:border-navy"
             />
           </div>
 
@@ -163,7 +163,7 @@ export function DashboardPage() {
                 setPage(1);
               }}
               aria-label="Filter by role"
-              className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#374151] focus:outline-none focus:border-[#1E3A8A]"
+              className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#374151] focus:outline-none focus:border-navy"
             >
               <option value="all">All Roles</option>
               {roles.map((r) => (
@@ -180,7 +180,7 @@ export function DashboardPage() {
                 setPage(1);
               }}
               aria-label="Filter by status"
-              className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#374151] focus:outline-none focus:border-[#1E3A8A]"
+              className="rounded-[10px] border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-[#374151] focus:outline-none focus:border-navy"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -196,7 +196,7 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={() => void fetchUsers()}
-              className="px-4 py-2 rounded-[10px] bg-[#1E3A8A] text-white text-sm font-medium hover:bg-[#172E6E]"
+              className="px-4 py-2 rounded-[10px] bg-navy text-white text-sm font-medium hover:bg-navy-hover"
             >
               Retry
             </button>
@@ -232,7 +232,7 @@ export function DashboardPage() {
               <tbody>
                 {loading ? (
                   Array.from({ length: 4 }).map((_, idx) => (
-                    <tr key={idx} className="border-b border-[#E5E7EB]/60 even:bg-[#F7F9FF]">
+                    <tr key={idx} className="border-b border-[#E5E7EB]/60 even:bg-table-alt">
                       <td className="px-5 py-4" colSpan={7}>
                         <div className="h-5 bg-[#E5E7EB]/60 rounded animate-pulse w-full" />
                       </td>
@@ -242,7 +242,7 @@ export function DashboardPage() {
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
-                        <div className="w-11 h-11 rounded-full bg-[#EAF0FF] text-[#1E3A8A] flex items-center justify-center">
+                        <div className="w-11 h-11 rounded-full bg-icon-chip text-navy flex items-center justify-center">
                           <Users className="w-5 h-5" />
                         </div>
                         <p className="text-sm font-medium text-[#111827]">No users found</p>
@@ -269,14 +269,14 @@ export function DashboardPage() {
                     return (
                       <tr
                         key={u.id}
-                        className="bg-white even:bg-[#F7F9FF] border-b border-[#E5E7EB]/60 last:border-b-0 transition-colors"
+                        className="bg-white even:bg-table-alt border-b border-[#E5E7EB]/60 last:border-b-0 transition-colors"
                       >
                         <td className="px-5 py-3.5 text-xs font-medium text-[#374151] whitespace-nowrap">
                           {formatUserId(u.id)}
                         </td>
                         <td className="px-5 py-3.5 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-full bg-[#EAF0FF] text-[#1E3A8A] text-xs font-semibold flex items-center justify-center shrink-0">
+                            <span className="w-8 h-8 rounded-full bg-icon-chip text-navy text-xs font-semibold flex items-center justify-center shrink-0">
                               {getInitials(u.fullName)}
                             </span>
                             <div>
@@ -312,7 +312,7 @@ export function DashboardPage() {
                               onClick={() => handleOpenEdit(u)}
                               aria-label={`Edit ${u.fullName}`}
                               title="Edit user"
-                              className="p-1.5 rounded-lg text-[#374151] hover:bg-[#EAF0FF] hover:text-[#1E3A8A] transition-colors"
+                              className="p-1.5 rounded-lg text-[#374151] hover:bg-icon-chip hover:text-navy transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>

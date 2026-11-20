@@ -307,6 +307,97 @@ async function main() {
     createdUserId = null;
     console.log('✓ DELETE /api/users/:id without history -> 200 (user & employee removed)');
 
+    // 13. Theme Settings API checks (public GET, admin-only PUT, validation, persistence)
+    const initialThemeRes = await fetch(`${baseUrl}/theme`);
+    assert.equal(initialThemeRes.status, 200);
+    const initialThemeJson = await initialThemeRes.json();
+    const originalTheme = initialThemeJson.data;
+    console.log(`✓ GET /api/theme (public) -> 200 (activeTheme: ${originalTheme.activeTheme})`);
+
+    try {
+      // Unauthenticated PUT -> 401
+      const unauthPut = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeTheme: 'emerald' }),
+      });
+      assert.equal(unauthPut.status, 401);
+
+      // Non-admin PUT -> 403
+      const mgrPut = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: managerLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'emerald' }),
+      });
+      assert.equal(mgrPut.status, 403);
+
+      const empPut = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: employeeLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'emerald' }),
+      });
+      assert.equal(empPut.status, 403);
+      console.log('✓ PUT /api/theme -> 401 unauth, 403 for manager/employee');
+
+      // Invalid theme name -> 400
+      const badTheme = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: adminLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'neon' }),
+      });
+      assert.equal(badTheme.status, 400);
+
+      // Invalid hex -> 400
+      const badHex = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: adminLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'custom', customPrimaryColor: 'not-a-hex' }),
+      });
+      assert.equal(badHex.status, 400);
+
+      // Custom without color -> 400
+      const missingColor = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: adminLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'custom' }),
+      });
+      assert.equal(missingColor.status, 400);
+      console.log('✓ PUT /api/theme -> 400 on invalid theme, invalid hex, and custom without color');
+
+      // Save emerald -> persists
+      const setEmerald = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: adminLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'emerald' }),
+      });
+      assert.equal(setEmerald.status, 200);
+      const getEmerald = await (await fetch(`${baseUrl}/theme`)).json();
+      assert.equal(getEmerald.data.activeTheme, 'emerald');
+      assert.equal(getEmerald.data.customPrimaryColor, null);
+
+      // Save custom -> persists
+      const setCustom = await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: adminLogin.cookie },
+        body: JSON.stringify({ activeTheme: 'custom', customPrimaryColor: '#0f766e' }),
+      });
+      assert.equal(setCustom.status, 200);
+      const getCustom = await (await fetch(`${baseUrl}/theme`)).json();
+      assert.equal(getCustom.data.activeTheme, 'custom');
+      assert.equal(getCustom.data.customPrimaryColor, '#0F766E');
+      console.log('✓ PUT /api/theme -> preset & custom theme changes persist across GET /api/theme');
+    } finally {
+      // Restore original theme
+      await fetch(`${baseUrl}/theme`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Cookie: adminLogin.cookie },
+        body: JSON.stringify({
+          activeTheme: originalTheme.activeTheme,
+          customPrimaryColor: originalTheme.customPrimaryColor,
+        }),
+      });
+    }
+
     console.log('\n===============================================================');
     console.log('       ALL PHASE 1 & PHASE 2 VERIFICATION CHECKS PASSED       ');
     console.log('===============================================================');

@@ -131,7 +131,7 @@ export function DeleteUserModal({ open, user, onClose, onSuccess }: DeleteUserMo
               type="button"
               onClick={handleDeactivate}
               disabled={submitting || !user?.isActive}
-              className="px-4 py-2 rounded-[10px] bg-[#1E3A8A] hover:bg-[#172E6E] text-white text-sm font-medium disabled:opacity-60"
+              className="px-4 py-2 rounded-[10px] bg-navy hover:bg-navy-hover text-white text-sm font-medium disabled:opacity-60"
             >
               {submitting ? 'Deactivating...' : 'Deactivate User Instead'}
             </button>
