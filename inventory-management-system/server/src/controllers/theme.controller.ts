@@ -1,3 +1,4 @@
+import '../types/express';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { getThemeSettings, updateThemeSettings } from '../services/theme.service';

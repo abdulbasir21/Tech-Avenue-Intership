@@ -1,3 +1,4 @@
+import '../types/express';
 import { NextFunction, Request, Response } from 'express';
 import { prisma } from '../config/prisma';
 import { AppError } from '../utils/AppError';

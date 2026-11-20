@@ -1,3 +1,4 @@
+import '../types/express';
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { loginWithCredentials } from '../services/auth.service';
