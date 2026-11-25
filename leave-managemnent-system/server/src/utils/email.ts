@@ -20,6 +20,11 @@ function formatFromAddress(): string {
   }
   const senderEmail =
     env.smtpUser && env.smtpUser.includes('@') ? env.smtpUser : 'no-reply@example.com';
+  if (senderEmail.endsWith('@smtp-brevo.com') && env.NODE_ENV !== 'test') {
+    console.warn(
+      '[EMAIL:WARN] EMAIL_FROM has no verified sender email address and fell back to @smtp-brevo.com SMTP login; Brevo may drop messages unless EMAIL_FROM includes a verified sender email (e.g. "Leave Management System <you@domain.com>").',
+    );
+  }
   return `"${rawFrom}" <${senderEmail}>`;
 }
 

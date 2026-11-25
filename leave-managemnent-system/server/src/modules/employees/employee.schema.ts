@@ -34,6 +34,13 @@ export const createEmployeeSchema = z.object({
 export const updateEmployeeSchema = z
   .object({
     name: z.string().trim().min(2).max(255).optional(),
+    email: z
+      .string()
+      .trim()
+      .email('Valid email is required')
+      .max(255)
+      .transform((v) => v.toLowerCase())
+      .optional(),
     phone: z.string().trim().max(50).optional().nullable(),
     designation: z.string().trim().max(255).optional().nullable(),
     departmentId: z.string().uuid('Invalid department ID').optional().nullable(),

@@ -270,7 +270,7 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       409:
- *         description: Duplicate employee code
+ *         description: Duplicate email or employee code
  *         content:
  *           application/json:
  *             schema:

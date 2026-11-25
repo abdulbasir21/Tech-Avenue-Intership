@@ -558,6 +558,11 @@
             "type": "string",
             "example": "Ayesha Khan"
           },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ayesha.khan@example.com"
+          },
           "phone": {
             "type": "string",
             "nullable": true,
@@ -1729,7 +1734,7 @@
             }
           },
           "409": {
-            "description": "Duplicate employee code",
+            "description": "Duplicate email or employee code",
             "content": {
               "application/json": {
                 "schema": {

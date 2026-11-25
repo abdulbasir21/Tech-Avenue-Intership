@@ -295,6 +295,7 @@ const swaggerDefinition = {
         type: 'object',
         properties: {
           name: { type: 'string', example: 'Ayesha Khan' },
+          email: { type: 'string', format: 'email', example: 'ayesha.khan@example.com' },
           phone: { type: 'string', nullable: true, example: '+92-300-7654321' },
           designation: { type: 'string', nullable: true, example: 'Lead Engineer' },
           departmentId: { type: 'string', format: 'uuid', nullable: true },

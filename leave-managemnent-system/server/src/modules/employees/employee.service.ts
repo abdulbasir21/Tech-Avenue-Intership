@@ -297,7 +297,7 @@ export async function updateEmployee(id: string, input: UpdateEmployeeInput) {
       organizationId: true,
       employeeCode: true,
       reportingManagerId: true,
-      user: { select: { role: true } },
+      user: { select: { role: true, email: true } },
     },
   });
 
@@ -331,6 +331,16 @@ export async function updateEmployee(id: string, input: UpdateEmployeeInput) {
     }
   }
 
+  if (input.email !== undefined && input.email !== existing.user.email) {
+    const duplicateEmail = await prisma.user.findUnique({
+      where: { email: input.email },
+      select: { id: true },
+    });
+    if (duplicateEmail) {
+      throw new AppError(409, 'An employee with this email already exists');
+    }
+  }
+
   if (input.employeeCode !== undefined && input.employeeCode !== existing.employeeCode) {
     const duplicateCode = await prisma.employee.findUnique({
       where: { employeeCode: input.employeeCode },
@@ -343,10 +353,17 @@ export async function updateEmployee(id: string, input: UpdateEmployeeInput) {
 
   const updated = await prisma.$transaction(
     async (tx) => {
+      const userUpdate: Prisma.UserUpdateInput = {};
       if (input.role && input.role !== existing.user.role) {
+        userUpdate.role = input.role;
+      }
+      if (input.email !== undefined && input.email !== existing.user.email) {
+        userUpdate.email = input.email;
+      }
+      if (Object.keys(userUpdate).length > 0) {
         await tx.user.update({
           where: { id: existing.userId },
-          data: { role: input.role },
+          data: userUpdate,
         });
       }
 

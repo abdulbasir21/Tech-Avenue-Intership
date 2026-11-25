@@ -322,6 +322,26 @@ describe('Leave Management System - User Management API', () => {
       expect(res.status).toBe(400);
     });
 
+    it('updates employee email via PATCH /employees/:id and rejects duplicate email with 409', async () => {
+      const updatedEmail = `${TEST_EMAIL_PREFIX}.emp.updated@example.com`;
+      const updateRes = await request(app)
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ email: updatedEmail });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.data.employee.email).toBe(updatedEmail);
+      employeeEmail = updatedEmail;
+
+      const dupRes = await request(app)
+        .patch(`/api/v1/employees/${employeeId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ email: managerEmail });
+
+      expect(dupRes.status).toBe(409);
+      expect(dupRes.body.success).toBe(false);
+    });
+
     it('lists employees with search, filters, pagination, sorting, and no passwordHash', async () => {
       const res = await request(app)
         .get('/api/v1/employees')
