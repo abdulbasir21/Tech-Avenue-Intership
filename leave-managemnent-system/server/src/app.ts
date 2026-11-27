@@ -22,10 +22,21 @@ app.use(
   }),
 );
 
+const allowedOrigins = new Set(
+  [
+    ...env.corsOrigins,
+    ...(env.PUBLIC_API_URL ? [env.PUBLIC_API_URL] : []),
+    ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL.replace(/^https?:\/\//, '')}`] : []),
+  ]
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter((o) => o.length > 0),
+);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || env.corsOrigins.includes('*') || env.corsOrigins.includes(origin)) {
+      const normalized = origin ? origin.replace(/\/+$/, '') : '';
+      if (!origin || allowedOrigins.has('*') || allowedOrigins.has(normalized)) {
         callback(null, true);
         return;
       }
